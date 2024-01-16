@@ -10,7 +10,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import (NoSuchElementException, TimeoutException,
                                         ElementClickInterceptedException, UnexpectedAlertPresentException,
@@ -33,12 +33,6 @@ def read_account_data_from_xlsx(excel_file):
             df['댓글 뒤에 추가할 문구'] = ""
         else:
             df['댓글 뒤에 추가할 문구'] = df['댓글 뒤에 추가할 문구'].fillna('').astype(str)
-
-        # '댓글 달 최대 블로그 개수' 처리 (옵션, 기본값 100)
-        if '댓글 달 최대 블로그 개수' not in df.columns or df['댓글 달 최대 블로그 개수'].isnull().all():
-            df['댓글 달 최대 블로그 개수'] = 100
-        else:
-            df['댓글 달 최대 블로그 개수'].fillna(100, inplace=True)
         
         return df
     except FileNotFoundError:
@@ -50,9 +44,8 @@ def read_account_data_from_xlsx(excel_file):
 def fetch_single_data_from_account_datas(account_datas):
     api_key = account_datas['chatGPT api키'].dropna().iloc[0]
     additional_comment = account_datas['댓글 뒤에 추가할 문구'].iloc[0] if not account_datas['댓글 뒤에 추가할 문구'].isnull().all() else ""
-    max_link_extract_cnt = int(account_datas['댓글 달 최대 블로그 개수'].iloc[0]) if not account_datas['댓글 달 최대 블로그 개수'].isnull().all() else 100
-
-    return api_key, additional_comment, max_link_extract_cnt
+    
+    return api_key, additional_comment
 
 
 def initialize_driver():
@@ -61,6 +54,32 @@ def initialize_driver():
     driver.implicitly_wait(3)
     return driver
 
+
+def get_feed_blog_count():
+    """사용자로부터 피드 개수 입력받기"""
+    feed_blog_input = input("\n서로이웃의 피드에서 작업할 블로그 글 개수를 입력해주세요\n(빈 값 입력시 피드에서 작업 생략): ")
+    return int(feed_blog_input) if feed_blog_input.isdigit() else 0
+
+
+def get_keyword_and_count():
+    """사용자로부터 키워드, 키워드 검색 개수 입력받기"""
+    keyword = input("\n키워드를 통한 블로그 검색 작업 시 사용할 키워드를 입력해주세요\n(빈 값 입력시 키워드 검색 생략): ")
+    if keyword:
+        keyword_blog_input = input("\n키워드 검색에서 작업할 블로그 글 개수를 입력해주세요\n(빈 값 입력시 키워드 검색 생략): ")
+        keyword_blog_count = int(keyword_blog_input) if keyword_blog_input.isdigit() else 0
+
+        if keyword_blog_count > 0:
+            print("\n블로그 검색 결과 정렬 방식을 숫자로 선택해주세요:\n 1: 최신순 (기본값)\n 2: 정확도순\n(빈 값 입력시 최신순으로 자동 선택)")
+            sorting_choice = input() or "1"
+            sorting_preference = 'date' if sorting_choice != "2" else 'sim'
+        else:
+            sorting_preference = None
+    else:
+        keyword_blog_count = 0
+        sorting_preference = None
+
+    return keyword, keyword_blog_count, sorting_preference
+   
 
 def login_to_naver(driver, username, password):
     driver.get("https://nid.naver.com/nidlogin.login?mode=form&url=https://www.naver.com")
@@ -90,41 +109,52 @@ def login_to_naver(driver, username, password):
         return False
 
 
-def get_blog_links(driver, max_link_extract_cnt):
-    """블로그 링크 추출"""
+def set_search_sorting(driver, sorting_preference):
+    """블로그 검색 결과 페이지에서 정렬 방식 설정"""
     try:
-        driver.get("https://m.blog.naver.com/FeedList.naver")
-        time.sleep(3)
+        sort_select = Select(driver.find_element(By.CSS_SELECTOR, "select.select__IkE09"))
+        sort_select.select_by_value(sorting_preference)
     except Exception as e:
-        print(f"블로그 피드 페이지로 이동하는데 실패했습니다: {e}")
-        return None
+        print(f"블로그 검색결과 정렬 방식 설정 중 오류 발생: {e}")
 
+
+def get_feed_blog_links(driver, max_count):
+    """블로그 피드 링크 추출"""
+    feed_url = "https://m.blog.naver.com/FeedList.naver"
     link_selector = "a.link__iGhdI"
-    link_list = []
-    while len(link_list) < max_link_extract_cnt:
-        if not scroll_to_bottom(driver):
-            print("블로그 피드 페이지 스크롤 끝에 도달했습니다. 더 이상 컨텐츠가 없습니다.")
-            break  
+    context = "서로이웃 피드"
+    return fetch_blog_links(driver, feed_url, link_selector, max_count, context)
 
-        time.sleep(1)
-        link_elements = driver.find_elements(By.CSS_SELECTOR, link_selector)
-        for link_element in link_elements:
-            link_href = link_element.get_attribute("href")
-            if link_href not in link_list:
-                link_list.append(link_href)
-            if len(link_list) == max_link_extract_cnt:
-                print(f"\n\n블로그 피드 스크래핑 중 지정한 최대 댓글 작성 수 {max_link_extract_cnt}개에 도달했습니다.")
-                break
 
-    if not link_list:
-        print("피드에 블로그 글이 없습니다.")
+def search_blog_by_keyword(driver, keyword, max_count, sorting_preference):
+    """키워드로 블로그 검색하고 링크 추출"""
+    search_url = f"https://m.blog.naver.com/SectionPostSearch.naver?orderType=sim&searchValue={keyword}"
+    link_selector = "a.link__OVpnJ"
+    context = "키워드 검색 결과"
+    return fetch_blog_links(driver, search_url, link_selector, max_count, context, sorting_preference)
+
+
+def fetch_blog_links(driver, url, link_selector, max_count, context, sorting_preference=None):
+    """공통 링크 추출 함수"""
+    try:
+        driver.get(url)
+
+        time.sleep(2)
+        # 키워드로 블로그 검색할 때만 정렬순서 세팅
+        if sorting_preference:
+            set_search_sorting(driver, sorting_preference)
+
+        time.sleep(2)
+    except Exception as e:
+        print(f"{context} 링크 추출 페이지로 이동하는데 실패했습니다: {e}")
         return None
 
-    print('\n읽어들인 블로그 링크 갯수 : ', len(link_list))
-    print('\n================================================\n'
-          '================================================\n')
+    link_list = scroll_to_bottom(driver, link_selector, max_count, context)
 
-    return link_list[:max_link_extract_cnt]
+    if len(link_list) < max_count:
+        print(f"{context}에서 충분한 수의 링크를 찾지 못했습니다.")
+
+    return link_list
 
 
 def navigate_to_comment_page(driver, link):
@@ -145,33 +175,70 @@ def is_already_commented(driver, link, nickname):
     try:
         # 댓글 페이지로 이동
         navigate_to_comment_page(driver, link)
-        time.sleep(1)
+
+        # 스크롤을 맨 위로 이동
+        scroll_to_top(driver)     
 
         # 닉네임이 페이지에 존재하는지 확인
         return bool(driver.find_element(By.XPATH, f"//span[@class='u_cbox_nick' and contains(text(), '{nickname}')]"))
+
+    except UnexpectedAlertPresentException:
+        # 댓글 페이지에서 경고창이 나타나면 처리
+        try:
+            alert = driver.switch_to.alert
+            alert_text = alert.text
+            alert.accept()
+            raise CommentNotAllowedException(f"댓글을 달 수 없는 블로그 글입니다: {alert_text}")
+        except NoAlertPresentException:
+            print("경고창을 처리하는 중 오류 발생")
+        return False
     except NoSuchElementException:
-        # 닉네임이 페이지에 없으면 False 반환
+        # 닉네임 요소 자체가 페이지에 없으면 False 반환
         return False
     except Exception as e:
-        print(f"이미 댓글 단 블로그인지 확인하는 도중 에러 발생 : {e}")
+        print(f"이미 댓글 단 블로그인지 확인하는 도중 에러 발생 : {str(e)}")
+        return False
+
+def scroll_to_top(driver):
+    """브라우저 스크롤을 맨 위로 이동하고 새로운 컨텐츠 로드될 때까지 반복"""
+    while True:
+        # 현재 스크롤 위치 저장
+        current_scroll_position = driver.execute_script("return window.pageYOffset;")
+        
+        # 스크롤을 맨 위로 이동
+        driver.execute_script("window.scrollTo(0, 0);")
+        time.sleep(0.5)  # 짧은 대기 시간
+
+        # 새로운 스크롤 위치 확인
+        new_scroll_position = driver.execute_script("return window.pageYOffset;")
+
+        # 스크롤 위치가 변하지 않았다면 중단
+        if current_scroll_position == new_scroll_position:
+            break        
 
 
 def like_blog_post(driver, link, likeminPauseTime, likemaxPauseTime, like_count, not_need_like_count):
     """좋아요 클릭"""
     driver.get(link)  # 블로그 본문 페이지로 이동
-    scroll_through_post(driver, likeminPauseTime, likemaxPauseTime)
+
+    #### 클라이언트의 요청. 체류시간 상관 없어하심. 체류시간 중요하지만 #####
+    time.sleep(1)
+    # scroll_through_post(driver, likeminPauseTime, likemaxPauseTime)
+    #### 클라이언트의 요청. 체류시간 상관 없어하심. 체류시간 중요하지만 #####
+
     try:
         heart_btn_selector = "a.u_likeit_list_btn._button._sympathyBtn"
         heart_btn = find_element_with_retry(driver, By.CSS_SELECTOR, heart_btn_selector)
         if heart_btn.get_attribute("aria-pressed") == "false":
             driver.execute_script("arguments[0].click();", heart_btn)
-            time.sleep(1)
+            time.sleep(1.5)
             like_count = handle_alert(driver, like_count)
         else:
+            print(heart_btn.get_attribute("aria-pressed"))
             print('\n이미 좋아요가 눌려있습니다.')
             not_need_like_count += 1
     except NoSuchElementException:
-        print("\n좋아요 버튼을 찾을 수 없습니다.")
+        print("\n좋아요 할 수 없는 블로그 글 입니다.")
     except UnexpectedAlertPresentException as e:
         print(f'\n좋아요 클릭 중 오류 발생: {str(e)}')
 
@@ -199,17 +266,44 @@ def find_element_with_retry(driver, by, value, delay=10):
     return element
 
 
-def scroll_to_bottom(driver):
-    """바닥까지 마우스 스크롤"""
-    old_position = driver.execute_script("return window.pageYOffset;")
-    driver.execute_script("window.scrollBy(0, 10000);")
-    time.sleep(random.uniform(1, 3))
-    new_position = driver.execute_script("return window.pageYOffset;")
-    return new_position != old_position
+#### TODO : 스크롤 아래로 내려갈수록 링크가 누적되서 점점 실행속도가 느려지는 것 보완해야
+def scroll_to_bottom(driver, link_selector, max_count, context):
+    """페이지 끝까지 스크롤하며 링크 수집"""
+    link_list = []
+    wait = WebDriverWait(driver, 10)  # 최대 10초 동안 기다림
 
+    while True:
+        current_links = driver.find_elements(By.CSS_SELECTOR, link_selector)
+        new_links = [link.get_attribute("href") for link in current_links if link.get_attribute("href") not in link_list]
+
+        if not new_links:
+            break  # 새로운 링크가 없으면 중단
+
+        link_list.extend(new_links)  # 새로운 링크 추가
+
+        # 지정한 최대 개수에 도달하면 초과된 링크 제거
+        if len(link_list) > max_count:
+            link_list = link_list[:max_count]
+            print(f"\n{context}에서 지정한 최대 글 수 {max_count}개에 도달했습니다.")
+            break
+
+        # 페이지 끝으로 스크롤
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+
+        # 새로운 콘텐츠가 로드될 때까지 기다림
+        try:
+            wait.until(lambda d: len(d.find_elements(By.CSS_SELECTOR,link_selector)) > len(current_links))
+        except TimeoutException:
+            break # 새 콘텐츠 로드 실패 시 중단
+
+    # 링크가 충분하지 않으면 메시지 출력
+    if len(link_list) < max_count:
+        print(f"{context}에서 충분한 수의 링크를 찾지 못했습니다.")
+
+    return link_list
 
 def scroll_through_post(driver, likeminPauseTime, likemaxPauseTime):
-    """포스트 글 안에서 천천히 스크롤"""
+    """포스트 글 안에서 천천히 스크롤(체류시간 중요함)"""
     document_height = driver.execute_script("return document.body.scrollHeight")
     while True:
         driver.find_element(By.XPATH, "//body").send_keys(Keys.PAGE_DOWN)
@@ -218,7 +312,7 @@ def scroll_through_post(driver, likeminPauseTime, likemaxPauseTime):
         if now_scroll_height >= document_height:
             break
         document_height = driver.execute_script("return document.body.scrollHeight")
-
+    
 
 def extract_blog_content(driver):
     """Extract the blog content from a blog post."""
@@ -270,7 +364,7 @@ def generate_comment_with_ai(openai_client, blog_content, author_name, additiona
 
         return comment, None
     except Exception as e:
-        return None, f'댓글 생성 중 오류 발생: {str(e)}'
+        return None, f'댓글 생성 중 오류 발생: {str(e)}\n 다음 글로 넘어갑니다..'
 
 
 def post_comment(driver, link, comment, index):
@@ -348,3 +442,10 @@ def print_final_output(naver_id, link_list_total, not_need_comment_count,
     print(f'- 댓글 달기 완수율 : {comment_completion_rate:.1f}%')
     print(f'- 좋아요 완수율    : {like_completion_rate:.1f}%')
     print('------------------------------------------------')
+
+
+class CommentNotAllowedException(Exception):
+    """예외 클래스: 댓글을 달 수 없는 블로그 글을 나타냄"""
+    def __init__(self, message="댓글을 달 수 없는 블로그 글입니다. 다음 블로그 링크로 넘어갑니다."):
+        self.message = message
+        super().__init__(self.message)

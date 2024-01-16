@@ -17,27 +17,9 @@ You're a blog commenting expert. Please follow the instructions below to create 
 5. Make it as natural as possible, like a human wrote it, not a machine.
 6. Use a bit more colloquial language while keeping it natural.
 7. Only write a comment in natural Korean so that it can be copied and used directly.
-8. Never say anything negative, never use 반말.
+8. Never say anything negative, never use 반말, never say '당신'.
 9. Use formal speech and honorifics.
 10. Never misspell the author's name.
-
-Example -  
-Blog content:
-I'm on a 3-day work trip in the Philippines.
-There are some people here I get along with well.
-They greet me with a nice smile, they're attentive, we talk well, and I feel comfortable with them.
-We always live in relationship with others.
-I think it's natural that everywhere there are people who fit me and don't fit me.
-It's impossible to fill my surroundings with all good people, but I hope to fill them as much as possible and spend good time with them.
-
-Example comment 1:
-I think I need to work on myself to fill my surroundings with good people. 
-I have a really hard time getting along with people. It takes too much energy.
-You seem like a good person who spends time with lots of good people!
-Example comment 2:  
-Everywhere there are people who fit me and don't fit me. 😁
-Example comment 3:
-Have a great trip to the Philippines! I hope you have a happy time surrounded by good people. Safe travels! 😊🌴
 """
    
             response = self.client.chat.completions.create(
