@@ -1,7 +1,7 @@
 import sys, os
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-import blog_actions
-from blog_actions import like_blog_post
+import program_actions
+from program_actions import like_blog_post
 
 def set_search_sorting(sorting_choice):
     """테스트용 정렬 방식 설정 함수"""

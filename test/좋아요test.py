@@ -4,8 +4,8 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException, UnexpectedAlertPresentException
 import sys, os
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-import blog_actions
-from blog_actions import like_blog_post
+import program_actions
+from program_actions import like_blog_post
 
 # 웹 드라이버 초기화 (Chrome을 사용하도록 설정)
 driver = webdriver.Chrome()

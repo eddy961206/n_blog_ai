@@ -1,31 +1,19 @@
 import ctypes
-from ctypes import wintypes
 import sys
 import time
-from blog_actions import (read_account_data_from_xlsx, initialize_driver, get_feed_blog_count,
-                          get_keyword_and_count,fetch_single_data_from_account_datas, login_to_naver, 
-                          get_feed_blog_links, search_blog_by_keyword, is_already_commented,
+from single_instance import SINGLE_INSTANCE_MUTEX
+from program_actions import (read_account_data_from_xlsx, initialize_driver, get_feed_blog_count,
+                          get_keyword_and_count,fetch_single_data_from_account_datas, print_final_output)
+from naver_utils import (login_to_naver, get_feed_blog_links, search_blog_by_keyword, is_already_commented,
                           CommentNotAllowedException, like_blog_post, extract_blog_content, 
                           extract_author_name, generate_comment_with_ai, post_comment, 
-                          logout_of_naver, print_final_output)
+                          logout_of_naver)
 from otp import validate_otp
 from api import OpenAIChatClient
 
 
 likeminPauseTime = 0.5 
 likemaxPauseTime = 6.5
-
-class SINGLE_INSTANCE_MUTEX:
-    """Windows Mutex를 사용하여 단일 인스턴스 실행을 보장하는 클래스"""
-
-    def __init__(self, mutex_name):
-        self.mutex_name = mutex_name
-        self.mutex = None
-
-    def already_running(self):
-        self.mutex = ctypes.windll.kernel32.CreateMutexA(None, False, self.mutex_name)
-        last_error = ctypes.windll.kernel32.GetLastError()
-        return last_error == 183  # ERROR_ALREADY_EXISTS
 
 # 메인 함수
 def main():

@@ -1,8 +1,8 @@
 import sys, os
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-import blog_actions
-from blog_actions import like_blog_post
-from blog_actions import scroll_to_top, navigate_to_comment_page, is_already_commented
+import program_actions
+from program_actions import like_blog_post
+from program_actions import scroll_to_top, navigate_to_comment_page, is_already_commented
 import time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
