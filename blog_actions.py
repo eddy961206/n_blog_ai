@@ -51,7 +51,7 @@ def fetch_single_data_from_account_datas(account_datas):
 def initialize_driver():
     """크롬 드라이버 초기화"""
     driver = webdriver.Chrome()
-    driver.implicitly_wait(3)
+    driver.implicitly_wait(5)
     return driver
 
 
@@ -164,6 +164,7 @@ def navigate_to_comment_page(driver, link):
         url_parts = link.split('&')  # https://m.blog.naver.com/PostView.naver?blogId=u_many_yeon&logNo=223316337997&navType=by -> https://m.blog.naver.com/CommentList.naver?blogId=u_many_yeon&logNo=223316337997
         comment_page_link = link.replace("PostView.naver", "CommentList.naver").split('&')[0] + '&' + url_parts[1]
         driver.get(comment_page_link)
+        
         return True
     except Exception as e:
         print(f"댓글 페이지로 이동하는 도중 오류가 발생했습니다: {e}")
@@ -175,6 +176,9 @@ def is_already_commented(driver, link, nickname):
     try:
         # 댓글 페이지로 이동
         navigate_to_comment_page(driver, link)
+
+        #### TDOO : 1.5초가 아니라 로딩다 되면 바로 위로 스크롤 될 수 있게 바꿔야
+        time.sleep(1.5)
 
         # 스크롤을 맨 위로 이동
         scroll_to_top(driver)     
@@ -221,24 +225,25 @@ def like_blog_post(driver, link, likeminPauseTime, likemaxPauseTime, like_count,
     """좋아요 클릭"""
     driver.get(link)  # 블로그 본문 페이지로 이동
 
-    #### 클라이언트의 요청. 체류시간 상관 없어하심. 체류시간 중요하지만 #####
-    time.sleep(1)
+#   #### 클라이언트의 요청. 체류시간 상관 없어하심. 체류시간 중요하지만 #####
+    # time.sleep(1)
     # scroll_through_post(driver, likeminPauseTime, likemaxPauseTime)
-    #### 클라이언트의 요청. 체류시간 상관 없어하심. 체류시간 중요하지만 #####
+#   #### 클라이언트의 요청. 체류시간 상관 없어하심. 체류시간 중요하지만 #####
 
     try:
         heart_btn_selector = "a.u_likeit_list_btn._button._sympathyBtn"
-        heart_btn = find_element_with_retry(driver, By.CSS_SELECTOR, heart_btn_selector)
-        if heart_btn.get_attribute("aria-pressed") == "false":
-            driver.execute_script("arguments[0].click();", heart_btn)
-            time.sleep(1.5)
-            like_count = handle_alert(driver, like_count)
+        # 좋아요 버튼이 있는지 먼저 확인
+        if driver.find_elements(By.CSS_SELECTOR, heart_btn_selector):
+            heart_btn = find_element_with_retry(driver, By.CSS_SELECTOR, heart_btn_selector)
+            if heart_btn and heart_btn.get_attribute("aria-pressed") == "false":
+                driver.execute_script("arguments[0].click();", heart_btn)
+                time.sleep(1.5)
+                like_count = handle_alert(driver, like_count)
+            else:
+                print('\n이미 좋아요가 눌려있습니다.')
+                not_need_like_count += 1
         else:
-            print(heart_btn.get_attribute("aria-pressed"))
-            print('\n이미 좋아요가 눌려있습니다.')
-            not_need_like_count += 1
-    except NoSuchElementException:
-        print("\n좋아요 할 수 없는 블로그 글 입니다.")
+            print("\n좋아요 할 수 없는 블로그 글입니다.")
     except UnexpectedAlertPresentException as e:
         print(f'\n좋아요 클릭 중 오류 발생: {str(e)}')
 
@@ -258,12 +263,18 @@ def handle_alert(driver, like_count):
     return like_count
 
 
-def find_element_with_retry(driver, by, value, delay=10):
+def find_element_with_retry(driver, by, value, delay=5):
     """요소가 나타날 때까지 찾기"""
-    element = WebDriverWait(driver, delay).until(
-        EC.presence_of_element_located((by, value))
-    )
-    return element
+    try:
+        element = WebDriverWait(driver, delay).until(
+            EC.presence_of_element_located((by, value))
+        )
+        return element
+    except TimeoutException:
+        # 요소가 지정된 시간 내에 나타나지 않으면 None 반환하거나 예외 발생
+        return None
+        # 또는 필요에 따라 예외를 발생시킬 수 있습니다:
+        # raise NoSuchElementException(f"요소가 {delay}초 동안 나타나지 않았습니다: {value}")
 
 
 #### TODO : 스크롤 아래로 내려갈수록 링크가 누적되서 점점 실행속도가 느려지는 것 보완해야

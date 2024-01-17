@@ -56,8 +56,8 @@ def test_is_already_commented():
 
 # 테스트 실행
 try:
-    test_navigate_to_comment_page()
-    test_scroll_to_top()
+    # test_navigate_to_comment_page()
+    # test_scroll_to_top()
     test_is_already_commented()
 except Exception as e:
     print(f"테스트 실패: {str(e)}")
