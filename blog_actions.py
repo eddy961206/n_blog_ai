@@ -48,9 +48,22 @@ def fetch_single_data_from_account_datas(account_datas):
     return api_key, additional_comment
 
 
+def get_system_user_agent():
+    """시스템의 현재 user-agent를 가져옵니다."""
+    temp_driver = webdriver.Chrome()
+    temp_driver.get("about:blank")
+    user_agent = temp_driver.execute_script("return navigator.userAgent;")
+    temp_driver.quit()
+    return user_agent
+
+
 def initialize_driver():
-    """크롬 드라이버 초기화"""
-    driver = webdriver.Chrome()
+    """user-agent를 사용하여 크롬 드라이버 초기화"""
+    user_agent = get_system_user_agent()
+    options = Options()
+    options.add_argument(f"user-agent={user_agent}")
+
+    driver = webdriver.Chrome(options=options)
     driver.implicitly_wait(5)
     return driver
 
@@ -164,6 +177,11 @@ def navigate_to_comment_page(driver, link):
         url_parts = link.split('&')  # https://m.blog.naver.com/PostView.naver?blogId=u_many_yeon&logNo=223316337997&navType=by -> https://m.blog.naver.com/CommentList.naver?blogId=u_many_yeon&logNo=223316337997
         comment_page_link = link.replace("PostView.naver", "CommentList.naver").split('&')[0] + '&' + url_parts[1]
         driver.get(comment_page_link)
+
+        # 댓글 입력창이 로드될 때까지 최대 10초 대기
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, ".u_cbox_inbox"))
+        )
         
         return True
     except Exception as e:
@@ -176,9 +194,6 @@ def is_already_commented(driver, link, nickname):
     try:
         # 댓글 페이지로 이동
         navigate_to_comment_page(driver, link)
-
-        #### TDOO : 1.5초가 아니라 로딩다 되면 바로 위로 스크롤 될 수 있게 바꿔야
-        time.sleep(1.5)
 
         # 스크롤을 맨 위로 이동
         scroll_to_top(driver)     

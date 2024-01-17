@@ -16,7 +16,7 @@ from selenium.common.exceptions import NoSuchElementException, UnexpectedAlertPr
 driver = webdriver.Chrome()
 
 # 테스트를 위한 블로그 글 링크와 닉네임 설정 (실제로 사용하실 링크와 닉네임으로 변경)
-blog_link = "https://m.blog.naver.com/PostView.naver?blogId=mentalisia&logNo=223308203874&navType=by"
+blog_link = "https://m.blog.naver.com/PostView.naver?blogId=mentalisia&logNo=223308203874&navType=by"   # 댓글 많음
 # blog_link = "https://m.blog.naver.com/PostView.naver?blogId=sosimrun&logNo=223324492952&searchKeyword=%EA%B2%BD%EC%A0%9C%EC%A0%81%20%EC%9E%90%EC%9C%A0"
 # blog_link = "https://m.blog.naver.com/PostView.naver?blogId=bluerose0328&logNo=223324522433&searchKeyword=%EB%8F%88"
 
