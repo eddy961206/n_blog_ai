@@ -11,6 +11,7 @@ from naver_utils import (login_to_naver, get_feed_blog_links, search_blog_by_key
 from otp import validate_otp
 from api import OpenAIChatClient
 
+# from settings_tab import SettingsTab
 
 likeminPauseTime = 0.5 
 likemaxPauseTime = 6.5
@@ -39,6 +40,14 @@ def main():
         
         api_key, additional_comment = \
             fetch_single_data_from_account_datas(account_datas)
+        
+        # # settings_tab 인스턴스에서 계정 정보를 가져옴
+        # accounts = SettingsTab.get_account_info()
+
+        # # program_actions.py의 함수 호출
+        # process_accounts(accounts)
+
+
 
         # 사용자 입력 처리(피드 개수, 키워드, 키워드 검색 개수)
         feed_blog_count = get_feed_blog_count()

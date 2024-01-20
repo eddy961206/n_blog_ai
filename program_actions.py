@@ -11,6 +11,13 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 
 
+# def process_accounts(accounts):
+#     # accounts 파라미터를 사용하여 로그인 및 자동화 로직 실행
+#     for account in accounts:
+#         id, password, nickname = account
+#         # 로그인 및 자동화 로직 실행
+#         # ...
+
 def read_account_data_from_xlsx(excel_file):
     """엑셀에서 계정데이터 읽기"""
     try:
