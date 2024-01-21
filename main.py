@@ -1,72 +1,37 @@
-import ctypes
-import sys
-import time
-from single_instance import SINGLE_INSTANCE_MUTEX
 from program_actions import (read_account_data_from_xlsx, initialize_driver, get_feed_blog_count,
                           get_keyword_and_count,fetch_single_data_from_account_datas, print_final_output)
 from naver_utils import (login_to_naver, get_feed_blog_links, search_blog_by_keyword, is_already_commented,
                           CommentNotAllowedException, like_blog_post, extract_blog_content, 
                           extract_author_name, generate_comment_with_ai, post_comment, 
                           logout_of_naver)
-from otp import validate_otp
 from api import OpenAIChatClient
-
-# from settings_tab import SettingsTab
 
 likeminPauseTime = 0.5 
 likemaxPauseTime = 6.5
 
-# 메인 함수
-def main():
-    mutex_name = "Global\\MyApp12345Mutex"  # 고유한 이름 지정
-    single_instance_mutex = SINGLE_INSTANCE_MUTEX(mutex_name)
-
-    # 프로그램이 하나만 작동 되도록 확인
-    if single_instance_mutex.already_running():
-        print("프로그램이 이미 실행 중입니다. 프로그램을 종료합니다.")
-        for i in range(3, 0, -1):
-            print(i)
-            time.sleep(1)
-        sys.exit()
-
+# 메인 로직 함수
+def main_logic(api_key, additional_comment, 
+               account_infos, feed_blog_count, keyword, 
+               keyword_blog_count, sorting_preference):
+    
     try:
-        # OTP 인증
-        secret_key = 'DIOFEPCKNMKOLEJFOSJOEHIUZHEBNKAL'
-        if not validate_otp(secret_key):
-            sys.exit()
-
-        # 계정 및 기타 정보들 엑셀에서 가져오기
-        account_datas = read_account_data_from_xlsx("accounts.xlsx")
-        
-        api_key, additional_comment = \
-            fetch_single_data_from_account_datas(account_datas)
-        
-        # # settings_tab 인스턴스에서 계정 정보를 가져옴
-        # accounts = SettingsTab.get_account_info()
-
-        # # program_actions.py의 함수 호출
-        # process_accounts(accounts)
-
-
-
-        # 사용자 입력 처리(피드 개수, 키워드, 키워드 검색 개수)
-        feed_blog_count = get_feed_blog_count()
-        keyword, keyword_blog_count, sorting_preference = get_keyword_and_count()
-              
+            
         # 웹드라이버 초기화
         driver = initialize_driver()
 
         print('\n\n===== ***** =====  프로그램 작동중.... ===== ***** =====')
-        print('\n\n=== !화면은 가려져도 되지만 창 최소화는 하지 말아주세요! ===')
+        print('\n\n=== !  화면은 가려져도 되지만 창 최소화는 하지 말아주세요 ! ===')
 
         # openai 클라이언트 생성
         openai_client = OpenAIChatClient(api_key)
 
         # 자동화 처리
-        for index, account_row in account_datas.iterrows():
-            process_account(driver, account_row['id'], account_row['pw'],
-                            account_row['닉네임'], openai_client, additional_comment,
-                            feed_blog_count, keyword, keyword_blog_count, sorting_preference)
+        for account_info in account_infos:
+            login_id, password, nickname = account_info.split(", ")
+            process_account(driver, login_id, password, nickname, 
+                            openai_client, additional_comment,
+                            feed_blog_count, keyword, 
+                            keyword_blog_count, sorting_preference)
         
         print('===== ***** ===== ***** ===== ***** ===== ***** ===== *****')
         print('\n댓글 달기 및 좋아요 누르기 프로그램 실행이 모두 완료되었습니다.')
@@ -76,12 +41,6 @@ def main():
     except Exception as e:
         print(f"\n\n**** 프로그램 실행 오류 : {e}\n"
               "\n프로그램이 예기치 못하게 중단 되었습니다.")
-        
-    finally:
-        if single_instance_mutex.mutex:
-            ctypes.windll.kernel32.CloseHandle(single_instance_mutex.mutex)
-        
-            input("\n종료하려면 아무 키나 눌러주세요...")
 
 
 # 계정마다 반복
@@ -175,7 +134,4 @@ def process_account(driver, id, pw, nickname, openai_client, additional_comment,
     # 로그아웃
     logout_of_naver(driver)
 
-    
 
-if __name__ == "__main__":
-    main()

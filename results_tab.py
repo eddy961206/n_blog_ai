@@ -12,5 +12,5 @@ class ResultsTab(tk.Frame):
         self.result_label.pack(pady=5)
 
         # 실행 결과 표시 영역
-        self.result_text = scrolledtext.ScrolledText(self, height=20)
+        self.result_text = scrolledtext.ScrolledText(self, height=50, state="disabled")
         self.result_text.pack(pady=5)

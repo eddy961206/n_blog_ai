@@ -4,10 +4,9 @@ import time
 def get_code(secret_key):
     return otp.get_totp(secret_key)
 
-def validate_otp(secret_key, attempts=5):
+def validate_otp(secret_key, user_code, attempts=5):
     failed_attempts = 0
     for _ in range(attempts):
-        user_code = input(f'({failed_attempts+1}/{attempts}) OTP값을 입력해주세요(띄어쓰기 제외): ')
         user_code = user_code.replace(" ", "")  # 띄어쓰기 및 공백 제거
         if otp.valid_totp(token=user_code, secret=secret_key):
             print('------- 프로그램 인증에 성공하였습니다. -------')

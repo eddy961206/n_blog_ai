@@ -44,6 +44,7 @@ def login_to_naver(driver, username, password):
 def set_search_sorting(driver, sorting_preference):
     """블로그 검색 결과 페이지에서 정렬 방식 설정"""
     try:
+        sorting_preference = 'date' if sorting_preference == '최신순' else 'sim'
         sort_select = Select(driver.find_element(By.CSS_SELECTOR, "select.select__IkE09"))
         sort_select.select_by_value(sorting_preference)
     except Exception as e:
