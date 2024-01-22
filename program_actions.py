@@ -117,7 +117,7 @@ def find_element_with_retry(driver, by, value, delay=5):
     """요소가 나타날 때까지 찾기"""
     try:
         element = WebDriverWait(driver, delay).until(
-            EC.presence_of_element_located((by, value))
+            EC.element_to_be_clickable((by, value))
         )
         return element
     except TimeoutException:

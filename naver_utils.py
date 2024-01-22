@@ -16,19 +16,26 @@ from bs4 import BeautifulSoup
 def login_to_naver(driver, username, password):
     driver.get("https://nid.naver.com/nidlogin.login?mode=form&url=https://www.naver.com")
     try:
-        driver.find_element(By.CSS_SELECTOR, "#id").click()
-        time.sleep(0.5)
+        username_input = find_element_with_retry(driver, By.CSS_SELECTOR, "#id")
+        username_input.click()
         pyperclip.copy(username)
         ActionChains(driver).key_down(Keys.CONTROL).send_keys("v").key_up(Keys.CONTROL).perform()
         
-        driver.find_element(By.CSS_SELECTOR, "#pw").click()
-        time.sleep(0.5)
+        password_input = find_element_with_retry(driver, By.CSS_SELECTOR, "#pw")
+        password_input.click()
         pyperclip.copy(password)
         ActionChains(driver).key_down(Keys.CONTROL).send_keys("v").key_up(Keys.CONTROL).perform()
         
-        driver.find_element(By.CSS_SELECTOR, "#log\\.login").click()
-        time.sleep(3)
-        
+        login_button = find_element_with_retry(driver, By.CSS_SELECTOR, "#log\\.login")
+        if login_button:
+            login_button.click()
+            time.sleep(2)
+
+            # 로그인 후 아이디 입력란이 여전히 존재하는지 확인
+            if find_element_with_retry(driver, By.CSS_SELECTOR, "#id", delay=2):
+                print("\n\n로그인 실패: 아이디 입력란이 여전히 존재합니다.")
+                return False
+                
         return True
     except NoSuchElementException:
         print("\n\n로그인 버튼을 찾을 수 없습니다.")
@@ -279,10 +286,8 @@ def post_comment(driver, link, comment, index):
         
         comment_box = find_element_with_retry(driver, By.CSS_SELECTOR, "#naverComment__write_textarea")
         
-        driver.execute_script("""
-            var commentDiv = arguments[0];
-            commentDiv.innerText = arguments[1];
-        """, comment_box, comment)
+        comment_box.clear()
+        comment_box.send_keys(comment)
 
         submit_button = find_element_with_retry(driver, By.CSS_SELECTOR, ".u_cbox_btn_upload")
         time.sleep(0.5)

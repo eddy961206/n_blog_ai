@@ -16,11 +16,12 @@ def main_logic(api_key, additional_comment,
     
     try:
             
+        print('\n\n===============  프로그램 작동중.... ===============')
+        print('\n\n=== 화면은 가려져도 되지만 크롬 창 최소화는 하지 말아주세요 ===')
+
         # 웹드라이버 초기화
         driver = initialize_driver()
 
-        print('\n\n===== ***** =====  프로그램 작동중.... ===== ***** =====')
-        print('\n\n=== !  화면은 가려져도 되지만 창 최소화는 하지 말아주세요 ! ===')
 
         # openai 클라이언트 생성
         openai_client = OpenAIChatClient(api_key)
@@ -33,7 +34,7 @@ def main_logic(api_key, additional_comment,
                             feed_blog_count, keyword, 
                             keyword_blog_count, sorting_preference)
         
-        print('===== ***** ===== ***** ===== ***** ===== ***** ===== *****')
+        print('===== ***** ===== *****  ===== ***** ===== *****')
         print('\n댓글 달기 및 좋아요 누르기 프로그램 실행이 모두 완료되었습니다.')
                 
         driver.quit()

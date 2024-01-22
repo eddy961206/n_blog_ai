@@ -38,7 +38,7 @@ def main():
         tab_control.pack(expand=1, fill='both')
 
         # TextRedirector 설정
-        # sys.stdout = TextRedirector(results_tab.result_text)
+        sys.stdout = TextRedirector(results_tab.result_text)
 
         root.mainloop()
     except Exception as e:
