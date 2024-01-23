@@ -321,7 +321,11 @@ class SettingsTab(Frame):
     def get_user_input_datas(self):
         api_key = self.openai_api_key_entry.get()
         account_infos = [self.account_info_listbox.get(idx) for idx in range(self.account_info_listbox.size())]
+        
+        # '댓글에 추가할 문구' placeholder와 같으면 빈칸으로
         additional_comment = self.additional_comment_text.get("1.0", "end-1c")
+        if additional_comment == self.PLACEHOLDER_ADDITIONAL_COMMENT:
+            additional_comment = ''
         
         # 'neighbor_feed_chkbox' 해제 -> '피드에서 추출할 글 개수' = 0
         feed_blog_count = int(self.feed_extract_count_entry.get()) if self.feed_extract_count_entry['state'] != 'disabled' else 0
@@ -439,11 +443,6 @@ class SettingsTab(Frame):
                 messagebox.showwarning("안내", "'키워드로 추출할 글 개수'는 1 이상이어야 합니다.")
                 self.keyword_count_entry.focus_set()
                 return False
-
-        # '댓글에 추가할 문구' 입력 검사
-        additional_comment = self.additional_comment_text.get("1.0", "end-1c")
-        if additional_comment == self.PLACEHOLDER_ADDITIONAL_COMMENT:
-            additional_comment = ''
 
         return True
 
@@ -574,12 +573,16 @@ class SettingsTab(Frame):
         self.additional_comment_text.insert('1.0', additional_comment)
 
         neighbor_feed_chkbox_value = self.config_manager.load_config('실행정보', '서로이웃 피드 체크박스')
+        if neighbor_feed_chkbox_value is None or neighbor_feed_chkbox_value == "":
+            neighbor_feed_chkbox_value = 'True'  # 기본값 체크
         self.neighbor_feed_chkbox_var.set(neighbor_feed_chkbox_value == 'True')
         
         feed_blog_count = self.config_manager.load_config('실행정보', '피드에서 추출할 글 개수')
         self.feed_extract_count_entry.insert(0, feed_blog_count)
 
         keyword_search_chkbox_value = self.config_manager.load_config('실행정보', '키워드 검색 체크박스')
+        if keyword_search_chkbox_value is None or keyword_search_chkbox_value == "":
+            keyword_search_chkbox_value = 'True'  # 기본값 체크
         self.keyword_search_chkbox_var.set(keyword_search_chkbox_value == 'True')
 
         keyword = self.config_manager.load_config('실행정보', '검색할 키워드')
@@ -589,6 +592,8 @@ class SettingsTab(Frame):
         self.keyword_count_entry.insert(0, keyword_blog_count)
 
         sorting_preference = self.config_manager.load_config('실행정보', '키워드 검색 정렬')
+        if sorting_preference is None or sorting_preference == "":
+            sorting_preference = "최신순"  # 기본값 '최신순'
         self.keyword_sort_combobox.set(sorting_preference)
     
 
