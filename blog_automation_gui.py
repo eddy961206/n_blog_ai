@@ -23,7 +23,7 @@ def main():
 
     try:
         root = tk.Tk()
-        root.title("블로그 자동화 프로그램")
+        root.title("린치핀 블로그 AI 댓글 프로그램")
         root.geometry("495x650")
 
         tab_control = ttk.Notebook(root)

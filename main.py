@@ -50,7 +50,7 @@ def process_account(driver, id, pw, nickname, openai_client, additional_comment,
     
     # 로그인
     if not login_to_naver(driver, id, pw):
-        print(f"\n계정 {id}의 로그인에 실패했습니다. 다음 계정으로 넘어갑니다.")
+        print(f"\n계정 {id}으로 로그인에 실패했습니다. 다음 계정으로 넘어갑니다.")
         return
     else :
         print(f"\n계정 {id}으로 로그인 하였습니다.")

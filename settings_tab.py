@@ -1,6 +1,6 @@
 import os
 import threading
-from tkinter import messagebox
+from tkinter import messagebox, scrolledtext
 import onetimepass as otp
 import tkinter as tk
 from tkinter import Frame, Canvas, Entry, Listbox, Scrollbar, Text, Button, PhotoImage, BooleanVar, Checkbutton, ttk
@@ -68,6 +68,9 @@ class SettingsTab(Frame):
         self.execute_button_image = PhotoImage(file=relative_to_assets("button_5.png"))
         self.execute_button = Button(self.canvas, image=self.execute_button_image, borderwidth=0, highlightthickness=0, command=self.run_main, relief="flat")
         self.execute_button.place(x=248.0, y=24.0, width=37.0, height=22.0)
+
+        # 안내 문구 추가
+        # self.canvas.create_text(290.0, 35.0, anchor="nw", text="'실행'버튼을 누르면 자동으로 \n입력하신 \n데이터들이 저장됩니다.",fill="#000000",font=("Inter", 10))
 
         # 'OPENAI API 키' 입력 필드와 라벨
         self.openai_api_key_entry_image = PhotoImage(file=relative_to_assets("entry_10.png"))
@@ -141,6 +144,15 @@ class SettingsTab(Frame):
         self.account_info_listbox.place(x=281.0, y=158.0, width=178.0, height=112.0)
         self.canvas.create_text(281.0, 143.0, anchor="nw", text="추가된 계정정보", fill="#000000", font=("Inter", 12 * -1))
 
+        # 계정 '위로' 버튼
+        self.move_up_button = Button(self.canvas, text="▲", command=self.move_up)
+        self.move_up_button.place(x=380.0, y=140.0, width=20, height=15)
+
+        # 계정 '아래로' 버튼
+        self.move_down_button = Button(self.canvas, text="▼", command=self.move_down)
+        self.move_down_button.place(x=410.0, y=140.0, width=20, height=15)
+
+
         # '추가' 버튼 동작 설정
         self.add_account_button.config(command=self.add_account_to_listbox)
 
@@ -159,7 +171,7 @@ class SettingsTab(Frame):
         # '댓글에 추가할 문구' 텍스트 필드와 라벨
         self.additional_comment_text_image = PhotoImage(file=relative_to_assets("entry_5.png"))
         self.additional_comment_text_bg = self.canvas.create_image(244.5, 356.0, image=self.additional_comment_text_image)
-        self.additional_comment_text = Text(self, bd=0, bg="#AAA2A2", fg="#000716", highlightthickness=0)
+        self.additional_comment_text = scrolledtext.ScrolledText(self, bd=0, bg="#AAA2A2", fg="#000716", highlightthickness=0)
         self.additional_comment_text.place(x=29.0, y=305.0, width=431.0, height=100.0)
         self.canvas.create_text(29.0, 290.0, anchor="nw", text="4. 댓글에 추가할 문구 (선택)", fill="#000000", font=("Inter Bold", 12 * -1))
 
@@ -468,6 +480,27 @@ class SettingsTab(Frame):
         self.update_scrollbars()
 
 
+    def move_up(self):
+        selected = self.account_info_listbox.curselection()
+        if selected:
+            index = selected[0]
+            if index > 0:
+                item = self.account_info_listbox.get(index)
+                self.account_info_listbox.delete(index)
+                self.account_info_listbox.insert(index - 1, item)
+                self.account_info_listbox.select_set(index - 1)
+
+    def move_down(self):
+        selected = self.account_info_listbox.curselection()
+        if selected:
+            index = selected[0]
+            if index < self.account_info_listbox.size() - 1:
+                item = self.account_info_listbox.get(index)
+                self.account_info_listbox.delete(index)
+                self.account_info_listbox.insert(index + 1, item)
+                self.account_info_listbox.select_set(index + 1)
+
+
     def add_placeholder_to_entry(self, entry_widget, placeholder, placeholder_color="#454343"):  
         def on_focus_in(event, placeholder=placeholder):
             if entry_widget.get() == placeholder:
@@ -485,6 +518,7 @@ class SettingsTab(Frame):
 
         entry_widget.bind("<FocusIn>", on_focus_in)
         entry_widget.bind("<FocusOut>", on_focus_out)
+
 
     def add_placeholder_to_text(self, text_widget, placeholder, placeholder_color="#454343"): 
         def on_focus_in(event, placeholder=placeholder):
@@ -557,8 +591,6 @@ class SettingsTab(Frame):
         sorting_preference = self.config_manager.load_config('실행정보', '키워드 검색 정렬')
         self.keyword_sort_combobox.set(sorting_preference)
     
-
-        
 
     def save_settings(self):
         api_key = self.openai_api_key_entry.get()

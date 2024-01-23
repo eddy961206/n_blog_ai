@@ -160,9 +160,11 @@ def like_blog_post(driver, link, likeminPauseTime, likemaxPauseTime, like_count,
         # 좋아요 버튼이 있는지 먼저 확인
         if driver.find_elements(By.CSS_SELECTOR, heart_btn_selector):
             heart_btn = find_element_with_retry(driver, By.CSS_SELECTOR, heart_btn_selector)
+            time.sleep(0.2)
+
             if heart_btn and heart_btn.get_attribute("aria-pressed") == "false":
                 driver.execute_script("arguments[0].click();", heart_btn)
-                time.sleep(1.5)
+                time.sleep(0.5)
                 like_count = handle_alert(driver, like_count)
             else:
                 print('\n이미 좋아요가 눌려있습니다.')
@@ -218,7 +220,7 @@ def scroll_to_bottom(driver, link_selector, max_count, context):
         link_list.extend(new_links)
 
         if len(link_list) >= max_count:
-            print(f"\n{context}에서 지정한 최대 글 수 {max_count}개에 도달했습니다.")
+            print(f"\n{context}에서 찾은 글이 지정하신 최대 글 수 {max_count}개에 도달했습니다.")
             break
 
     return link_list[:max_count]
