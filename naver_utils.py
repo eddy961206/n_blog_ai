@@ -52,7 +52,9 @@ def set_search_sorting(driver, sorting_preference):
     """블로그 검색 결과 페이지에서 정렬 방식 설정"""
     try:
         sorting_preference = 'date' if sorting_preference == '최신순' else 'sim'
-        sort_select = Select(driver.find_element(By.CSS_SELECTOR, "select.select__IkE09"))
+        # value가 sim인 option 태그를 포함하는 select 태그를 찾기
+        select_tag = driver.find_element(By.XPATH, "//option[@value='sim']/..")
+        sort_select = Select(select_tag)
         sort_select.select_by_value(sorting_preference)
     except Exception as e:
         print(f"블로그 검색결과 정렬 방식 설정 중 오류 발생: {e}")
@@ -61,7 +63,7 @@ def set_search_sorting(driver, sorting_preference):
 def get_feed_blog_links(driver, max_count):
     """블로그 피드 링크 추출"""
     feed_url = "https://m.blog.naver.com/FeedList.naver"
-    link_selector = "a.link__iGhdI"
+    link_selector = "div[class^='item__'] a"
     context = "서로이웃 피드"
     return fetch_blog_links(driver, feed_url, link_selector, max_count, context)
 
@@ -69,7 +71,7 @@ def get_feed_blog_links(driver, max_count):
 def search_blog_by_keyword(driver, keyword, max_count, sorting_preference):
     """키워드로 블로그 검색하고 링크 추출"""
     search_url = f"https://m.blog.naver.com/SectionPostSearch.naver?orderType=sim&searchValue={keyword}"
-    link_selector = "a.link__OVpnJ"
+    link_selector = "div[class^='item__'] a"
     context = "키워드 검색 결과"
     return fetch_blog_links(driver, search_url, link_selector, max_count, context, sorting_preference)
 

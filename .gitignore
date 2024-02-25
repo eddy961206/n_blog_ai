@@ -1,1 +1,7 @@
 /accounts.xlsx
+/설정정보.ini
+/dist
+/__pycache__
+/venv
+/build/*
+!/build/assets/
