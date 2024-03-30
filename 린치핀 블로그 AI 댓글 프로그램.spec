@@ -1,6 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 
-my_program_name = "린치핀 블로그 AI 댓글 프로그램 v2.0"
+my_program_name = "린치핀 블로그 AI 댓글 프로그램 v2.2"
 
 
 a = Analysis(
